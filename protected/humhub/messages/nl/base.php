@@ -26,6 +26,7 @@ return array (
   'Copy to clipboard' => 'Kopieer naar klembord',
   'Could not find content of addon!' => 'Kan de inhoud van deze addon niet vinden!',
   'Could not find requested page.' => 'Kan de opgevraagde pagina niet vinden.',
+  'Database connection time: {dbTime} - Configured time zone: {time}' => 'Database verbindingstijd: {dbTime} - in tijdzone: {time}',
   'Default' => 'Standaard',
   'Delete' => 'Verwijder',
   'Deny' => 'Weigeren',
@@ -81,4 +82,7 @@ return array (
   'Upload' => 'Upload',
   'Upload file' => 'Upload bestand',
   'You are not allowed to run this action.' => 'U mag deze actie niet uitvoeren.',
+  '{nFormatted}B' => '{nFormatted}B',
+  '{nFormatted}K' => '{nFormatted}K',
+  '{nFormatted}M' => '{nFormatted}M',
 );

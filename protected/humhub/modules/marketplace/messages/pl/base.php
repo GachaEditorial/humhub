@@ -35,6 +35,7 @@ Module successfully enabled!
     'All {moduleId} module content will be deleted. Continue?' => 'Całą zawartość modułu {moduleId} zostanie usunięta. Kontynuować?',
     'Available updates' => 'Dostępne aktualizacje',
     'Browse online' => 'Przeglądaj online',
+    'Buy' => 'Kup',
     'Buy (%price%)' => 'Kup (%price%)',
     'Could not connect to licence server!' => 'Nie można połączyć z serwerem licencyjnym!',
     'Could not extract module!' => 'Nie można wypakować modułu!',
@@ -42,6 +43,9 @@ Module successfully enabled!
     'Could not update licence. Error: ' => 'Nie można uaktualnić licencji. Błąd:',
     'Download of module failed!' => 'Pobieranie modułu nie powiodło się!',
     'Edit licence' => 'Edytuj licencję',
+    'If this Module is additionally marked as <strong>"Community"</strong> it is neither tested nor monitored by the HumHub project team.' => 'Jeżeli ten moduł jest oznaczony jako <strong>"Społeczność"</strong> oznacza to, że nie jest testowany ani monitorowany przez zespół HumHub.',
+    'Include Community Modules' => 'Uwzględnij Moduły Społeczności',
+    'Include beta updates' => 'Uwzględnij uaktualnienia beta',
     'Install' => 'Zainstaluj',
     'Installed' => 'Zainstalowane',
     'Installed version:' => 'Zainstalowana wersja:',
@@ -73,19 +77,32 @@ Module successfully enabled!
     'Remove licence key' => 'Usuń klucz licencyjny',
     'Save and update' => 'Zapisz i aktualizuj',
     'Search' => 'Szukaj',
+    'The HumHub project does not guarantee the functionality, quality or the continuous development of this Module.' => 'Zespół HumHub nie gwarantuje funkcjonalności, jakości lub ciągłości wsparcia tego modułu.',
     'Third-party' => 'Inni dostawcy',
+    'Third-party Modules are not covered by Professional Edition agreements.' => 'Moduły osób trzecich nie są wspierane przez umowę Profesjonalnej Edycji.',
     'Third-party disclaimer' => 'Oświadczenie osób trzecich',
+    'This Module was developed by a third-party.' => 'Ten moduł został opracowany przez osoby trzecie.',
     'Update' => 'Aktualizuj',
     'Updating module...' => 'Aktualizuję moduł...',
     'Upgrade to Professional Edition' => 'Ulepsz do Wersji Profesjonalnej',
     'Version:' => 'Wersja:',
     'View Changelog' => 'Przejrzyj zmiany',
     'search for available modules online' => 'szukaj dostępnych modułów online',
-    'Buy' => '',
-    'If this Module is additionally marked as <strong>"Community"</strong> it is neither tested nor monitored by the HumHub project team.' => '',
-    'Include Community Modules' => '',
-    'Include beta updates' => '',
-    'The HumHub project does not guarantee the functionality, quality or the continuous development of this Module.' => '',
-    'Third-party Modules are not covered by Professional Edition agreements.' => '',
-    'This Module was developed by a third-party.' => '',
+    '
+No active Professional Edition license found!
+' => '',
+    '
+PROFESSIONAL EDITION
+' => '',
+    '
+The license could not be activated:
+' => '',
+    '
+The license was successfully activated!
+
+' => '',
+    '
+The license was successfully removed!
+
+' => '',
 ];

@@ -14,12 +14,11 @@
         max-height: none !important;
     }
 
-  .ProseMirror {
-    position:static;
-    overflow:auto;
-    height: 100%;
-    height: calc(100% - 26px);
-  }
+    .ProseMirror {
+        position: static;
+        overflow: auto;
+        height: calc(100% - 26px);
+    }
 
     .ProseMirror-menubar {
         position: static !important;
@@ -280,11 +279,11 @@
         -moz-box-sizing: border-box;
         box-sizing: border-box;
         overflow: visible;
-        margin-top: -26px;
+        margin-top: -25px;
         background: white;
-        border: 1px solid @background3;
+        border: 1px solid @text-color-soft2;
         border-bottom: 0;
-        border-top: 2px solid @background3;
+        border-top: 1px solid @text-color-soft2;
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
         float: left;
@@ -293,7 +292,7 @@
 
     @-moz-document url-prefix() {
         .ProseMirror-menubar {
-            margin-top: -27px;
+            margin-top: -26px;
         }
     }
 }
@@ -410,32 +409,23 @@
         line-height: 2px;
     }
 
-    .ProseMirror ul, .ProseMirror ol {
-        padding-left: 30px;
-    }
-
-    .ProseMirror blockquote {
-        padding-left: 1em;
-        border-left: 3px solid #eee;
-        margin-left: 0;
-        margin-right: 0;
-    }
-
     .ProseMirror-example-setup-style img {
         cursor: default;
     }
 
     .ProseMirror p {
-        margin-top: 1em;
+        margin-top: 1.2em;
     }
 
     // Prevent first paragraph to stetch the input
+    // Note: this is also applied for li p
     .ProseMirror p:first-child {
-        margin: 0px;
+        margin: 0;
     }
 
-    .ProseMirror p:first-child + * {
-        margin-top: 1em;
+    // Make sure next block after first child does have a margin
+    .ProseMirror > p:first-child + * {
+        margin-top: 1.2em;
     }
 
     .ProsemirrorEditor {
@@ -460,11 +450,10 @@
     }
 
     .ProseMirror [data-mention] {
-        color: @info
+        color: @link
     }
 
     .ProseMirror {
-        //line-height: 1.2;
         outline: none;
     }
 
@@ -486,7 +475,7 @@
     }
 
     .ProseMirror .placeholder {
-        padding: 0px !important;
+        padding: 0 !important;
         pointer-events: none;
         height: 0;
     }
@@ -641,7 +630,7 @@
     }
 
     .emoji-nav-item.cur {
-        border-left: 0px;
+        border-left: 0;
         border-top: 2px solid @info;
     }
 }
@@ -650,15 +639,37 @@
 [data-ui-richtext] {
     overflow-x: auto;
     overflow-wrap: break-word;
+
     a {
-        color: @info
+        color: @link
+    }
+}
+
+#wallStream {
+    [data-ui-markdown],
+    [data-ui-richtext] {
+        overflow-wrap: initial;
+        word-break: initial;
+        hyphens: initial;
     }
 }
 
 @media screen and (max-width: 768px) {
+
     .ProsemirrorEditor.focusMenu {
+        .form-control:focus {
+            border-top-right-radius: 0 !important;
+        }
+
         .ProseMirror-menubar {
             min-height: 1em;
+            margin-top: 0;
+        }
+    }
+
+    .ProsemirrorEditor.focusMenu {
+        .humhub-ui-richtext {
+            margin-top: 0;
         }
     }
 }

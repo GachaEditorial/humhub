@@ -12,7 +12,6 @@ use Yii;
 use yii\base\ErrorException;
 use yii\db\ActiveRecord;
 use yii\base\Exception;
-use yii\db\Expression;
 use humhub\libs\UUID;
 use humhub\modules\user\components\CheckPasswordValidator;
 
@@ -36,6 +35,7 @@ class Password extends ActiveRecord
     public $newPassword;
     public $newPasswordConfirm;
     public $defaultAlgorithm = '';
+    public $mustChangePassword;
 
     public function init()
     {
@@ -55,7 +55,7 @@ class Password extends ActiveRecord
 
     public function beforeSave($insert)
     {
-        $this->created_at = new Expression('NOW()');
+        $this->created_at = date('Y-m-d G:i:s');
 
         return parent::beforeSave($insert);
     }
@@ -86,12 +86,13 @@ class Password extends ActiveRecord
             [['newPassword', 'newPasswordConfirm', 'currentPassword'], 'required', 'on' => 'changePassword'],
             [['newPassword'], 'unequalsCurrentPassword', 'on' => 'changePassword'],
             [['newPasswordConfirm'], 'compare', 'compareAttribute' => 'newPassword', 'on' => ['registration', 'changePassword']],
+            [['mustChangePassword'], 'boolean'],
         ];
     }
-    
+
     /**
      * The new password has to be unequal to the current password.
-     * 
+     *
      * @param type $attribute
      * @param type $params
      */
@@ -111,7 +112,7 @@ class Password extends ActiveRecord
             $scenarios['changePassword'][] = 'currentPassword';
         }
 
-        $scenarios['registration'] = ['newPassword', 'newPasswordConfirm'];
+        $scenarios['registration'] = ['newPassword', 'newPasswordConfirm', 'mustChangePassword'];
 
         return $scenarios;
     }
@@ -126,11 +127,12 @@ class Password extends ActiveRecord
             'user_id' => 'User ID',
             'algorithm' => 'Algorithm',
             'password' => Yii::t('UserModule.base', 'Password'),
-            'currentPassword' => Yii::t('UserModule.base', 'Current Password'),
+            'currentPassword' => Yii::t('UserModule.base', 'Current password'),
             'salt' => 'Salt',
             'created_at' => 'Created At',
             'newPassword' => Yii::t('UserModule.base', 'New password'),
-            'newPasswordConfirm' => Yii::t('UserModule.base', 'Confirm new password')
+            'newPasswordConfirm' => Yii::t('UserModule.base', 'Confirm new password'),
+            'mustChangePassword' => Yii::t('UserModule.base', 'Force password change upon first login'),
         ];
     }
 
@@ -198,7 +200,7 @@ class Password extends ActiveRecord
             foreach ($additionalRules as $pattern => $message) {
                 $errorMessage = $userModule->isCustomPasswordStrength() ?
                     Yii::t('UserModule.custom', $message) :
-                    Yii::t('UserModule.base', $message);
+                    $message;
                 try {
                     preg_match($pattern, $this->$attribute, $matches);
                     if (! count($matches)) {

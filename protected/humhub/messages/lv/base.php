@@ -91,6 +91,7 @@ return [
     'Add:' => '',
     'All' => '',
     'Could not find requested page.' => '',
+    'Database connection time: {dbTime} - Configured time zone: {time}' => '',
     'Export' => '',
     'Please type at least {count} characters' => '',
     'Powered by {name}' => '',
@@ -99,4 +100,7 @@ return [
     'Text has been copied to clipboard' => '',
     'There are unsaved changes, do you really want to leave this page?' => '',
     'Time Zone' => '',
+    '{nFormatted}B' => '',
+    '{nFormatted}K' => '',
+    '{nFormatted}M' => '',
 ];

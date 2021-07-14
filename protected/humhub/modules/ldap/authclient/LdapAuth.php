@@ -17,16 +17,17 @@ use humhub\modules\user\authclient\interfaces\ApprovalBypass;
 use humhub\modules\user\authclient\interfaces\AutoSyncUsers;
 use humhub\modules\user\authclient\interfaces\PrimaryClient;
 use humhub\modules\user\authclient\interfaces\SyncAttributes;
+use humhub\modules\user\models\forms\Login;
 use humhub\modules\user\models\ProfileField;
 use humhub\modules\user\models\User;
 use Yii;
 use yii\db\Expression;
 use yii\helpers\ArrayHelper;
 use yii\helpers\VarDumper;
-use Zend\Ldap\Exception\LdapException;
-use Zend\Ldap\Ldap;
+use Laminas\Ldap\Exception\LdapException;
+use Laminas\Ldap\Ldap;
 use humhub\modules\ldap\components\ZendLdap;
-use Zend\Ldap\Node;
+use Laminas\Ldap\Node;
 
 /**
  * LDAP Authentication
@@ -275,6 +276,8 @@ class LdapAuth extends BaseFormAuth implements AutoSyncUsers, SyncAttributes, Ap
         if ($node !== null) {
             $this->setUserAttributes(array_merge(['dn' => $node], $node->getAttributes()));
             return true;
+        } else if($this->login instanceof Login) {
+            $this->countFailedLoginAttempts();
         }
 
         return false;
@@ -438,7 +441,7 @@ class LdapAuth extends BaseFormAuth implements AutoSyncUsers, SyncAttributes, Ap
     /**
      * Sets an Zend LDAP Instance
      *
-     * @param \Zend\Ldap\Ldap $ldap
+     * @param \Laminas\Ldap\Ldap $ldap
      */
     public function setLdap(Ldap $ldap)
     {
@@ -519,7 +522,7 @@ class LdapAuth extends BaseFormAuth implements AutoSyncUsers, SyncAttributes, Ap
                     }
                 }
             }
-        } catch (\Zend\Ldap\Exception\LdapException $ex) {
+        } catch (\Laminas\Ldap\Exception\LdapException $ex) {
             Yii::error('Could not connect to LDAP instance: ' . $ex->getMessage(), 'ldap');
         } catch (\Exception $ex) {
             Yii::error('An error occurred while user sync: ' . $ex->getMessage(), 'ldap');

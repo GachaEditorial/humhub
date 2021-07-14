@@ -12,6 +12,7 @@ return array (
   'Add <strong>Modules</strong>' => 'Ajouter des <strong>modules</strong>',
   'Advanced access settings' => 'Paramètres d\'accès avancés',
   'Archive' => 'Archiver',
+  'Are you sure you want to remove this member.' => 'Etes vous sur de vouloir retirer ce membre.',
   'Are you sure, that you want to delete this space? All published content will be removed!' => 'Êtes-vous certain de vouloir supprimer cet espace ? Tout le contenu publié sera définitivement supprimé également !',
   'Are you sure? *ALL* module data for this space will be deleted!' => 'Êtes-vous certain ? *TOUTES* les données associées à ce module seront définitivement perdues !',
   'As owner of this space you can transfer this role to another administrator in space.' => 'En tant que propriétaire de cet espace, vous pouvez transférer ce rôle à un administrateur de cet espace.',
@@ -53,7 +54,6 @@ return array (
   'Unarchive' => 'Désarchiver',
   'e.g. example for {baseUrl}/s/example' => 'p.ex. pour {baseUrl}/s/exemple',
   'never' => 'jamais',
-  'space description' => 'description de cet espace',
   'the default start page of this space for members' => 'la page par défaut de cet espace pour les membres',
   'the default start page of this space for visitors' => 'la page par défaut de cet espace pour les visiteurs',
 );

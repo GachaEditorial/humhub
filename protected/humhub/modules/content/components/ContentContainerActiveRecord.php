@@ -102,10 +102,12 @@ abstract class ContentContainerActiveRecord extends ActiveRecord
 
     /**
      * Should be overwritten by implementation
+     * @param bool $scheme since 1.8
+     * @return string
      */
-    public function getUrl()
+    public function getUrl($scheme = false)
     {
-        return $this->createUrl();
+        return $this->createUrl(null, [], $scheme);
     }
 
     /**
@@ -152,6 +154,24 @@ abstract class ContentContainerActiveRecord extends ActiveRecord
     public static function findByGuid($token)
     {
         return static::findOne(['guid' => $token]);
+    }
+
+    /**
+     * Compares this container with the given $container instance. If the $container is null this function will always
+     * return false. Null values are accepted in order to safely enable calls as `$user->is(Yii::$app->user->getIdentity())`
+     * which would otherwise fail in case of guest users.
+     *
+     * @param ContentContainerActiveRecord|null $container
+     * @return bool
+     * @since 1.7
+     */
+    public function is(ContentContainerActiveRecord $container = null)
+    {
+        if (!$container || !($container instanceof self)) {
+            return false;
+        }
+
+        return $container->contentcontainer_id === $this->contentcontainer_id;
     }
 
     /**
@@ -286,7 +306,7 @@ abstract class ContentContainerActiveRecord extends ActiveRecord
     /**
      * Returns user groups
      */
-    public function getUserGroups()
+    public static function getUserGroups()
     {
         return [];
     }

@@ -11,6 +11,7 @@ namespace humhub\modules\space\controllers;
 use humhub\modules\content\components\ContentContainerController;
 use humhub\components\behaviors\AccessControl;
 use humhub\modules\space\models\Space;
+use humhub\modules\space\widgets\Chooser;
 use humhub\modules\user\models\User;
 use humhub\modules\user\widgets\UserListBox;
 use humhub\modules\stream\actions\ContentContainerStream;
@@ -43,7 +44,7 @@ class SpaceController extends ContentContainerController
         return [
             'acl' => [
                 'class' => AccessControl::class,
-                'guestAllowedActions' => ['index', 'home', 'stream']
+                'guestAllowedActions' => ['index', 'home', 'stream', 'about'],
             ]
         ];
     }
@@ -127,7 +128,10 @@ class SpaceController extends ContentContainerController
         }
 
         if (Yii::$app->request->isAjax) {
-            return $this->asJson(['success' => $success]);
+            return $this->asJson([
+                'success' => $success,
+                'space' => Chooser::getSpaceResult($space, true, ['isFollowing' => true]),
+            ]);
         }
 
         return $this->redirect($space->getUrl());
@@ -144,7 +148,10 @@ class SpaceController extends ContentContainerController
         $success = $space->unfollow();
 
         if (Yii::$app->request->isAjax) {
-            return $this->asJson(['success' => $success]);
+            return $this->asJson([
+                'success' => $success,
+                'space' => $space->guid,
+            ]);
         }
 
         return $this->redirect($space->getUrl());
@@ -164,6 +171,19 @@ class SpaceController extends ContentContainerController
         $title = Yii::t('SpaceModule.base', '<strong>Space</strong> followers');
 
         return $this->renderAjaxContent(UserListBox::widget(['query' => $query, 'title' => $title]));
+    }
+
+    /**
+     * About space page
+     */
+    public function actionAbout()
+    {
+        $space = $this->getSpace();
+
+        return $this->render('about', [
+            'space' => $space,
+            'userGroups' => $space->getPrivilegedGroupUsers(),
+        ]);
     }
 
 }

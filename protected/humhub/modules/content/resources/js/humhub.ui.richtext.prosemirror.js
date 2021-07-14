@@ -2,7 +2,7 @@
  * @link https://www.humhub.org/
  * @copyright Copyright (c) 2018 HumHub GmbH & Co. KG
  * @license https://www.humhub.com/licences
- *
+ * @since 1.8
  */
 humhub.module('ui.richtext.prosemirror', function(module, require, $) {
 
@@ -104,6 +104,7 @@ humhub.module('ui.richtext.prosemirror', function(module, require, $) {
             this.$.html(this.editor.render());
             additions.applyTo(this.$, {filter: ['highlightCode']});
             this.$.find('table').wrap('<div class="table-responsive"></div>');
+            this.$.trigger('afterRender');
         }
 
         // See https://github.com/ProseMirror/prosemirror/issues/432
@@ -140,6 +141,18 @@ humhub.module('ui.richtext.prosemirror', function(module, require, $) {
 
     };
 
+    /**
+     * Builds mentioning string from container link
+     * @param $containerLink
+     * @returns {string}
+     */
+    var buildMentioning = function($containerLink) {
+        var username = $containerLink.text();
+        var guid = $containerLink.data('guid');
+        var url = $containerLink.attr('href');
+        return '['+username+'](mention:'+guid+' "'+url+'")';
+    };
+
     module.export({
         initOnPjaxLoad: true,
         unload: function(pjax) {
@@ -148,6 +161,7 @@ humhub.module('ui.richtext.prosemirror', function(module, require, $) {
         },
         RichTextEditor: RichTextEditor,
         RichText: RichText,
+        buildMentioning: buildMentioning,
         api: prosemirror
     });
 });

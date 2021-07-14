@@ -14,6 +14,7 @@ use humhub\modules\admin\permissions\ManageUsers;
 use humhub\modules\content\components\behaviors\CompatModuleManager;
 use humhub\modules\content\components\behaviors\SettingsBehavior;
 use humhub\modules\content\components\ContentContainerActiveRecord;
+use humhub\modules\content\components\ContentContainerSettingsManager;
 use humhub\modules\content\models\Content;
 use humhub\modules\friendship\models\Friendship;
 use humhub\modules\search\events\SearchAddEvent;
@@ -35,6 +36,7 @@ use Yii;
 use yii\base\Exception;
 use yii\db\ActiveQuery;
 use yii\db\Expression;
+use yii\db\Query;
 use yii\web\IdentityInterface;
 
 /**
@@ -86,6 +88,13 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
     const USERGROUP_FRIEND = 'u_friend';
     const USERGROUP_USER = 'u_user';
     const USERGROUP_GUEST = 'u_guest';
+
+    /**
+     * Scenarios
+     */
+    const SCENARIO_EDIT_ADMIN = 'editAdmin';
+    const SCENARIO_LOGIN = 'login';
+    const SCENARIO_REGISTRATION = 'registration';
 
     /**
      * @event Event an event that is triggered when the user visibility is checked via [[isVisible()]].
@@ -141,11 +150,13 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
             [['username'], 'unique'],
             [['username'], 'string', 'max' => $userModule->maximumUsernameLength, 'min' => $userModule->minimumUsernameLength],
             // Client validation is disable due to invalid client pattern validation
-            [['username'], 'match', 'not' => true, 'pattern' => '/[\x00-\x1f\x7f]/', 'message' => Yii::t('UserModule.base', 'Username contains invalid characters.'), 'enableClientValidation' => false],
+            [['username'], 'match', 'pattern' => $userModule->validUsernameRegexp, 'message' => Yii::t('UserModule.base', 'Username contains invalid characters.'), 'enableClientValidation' => false, 'when' => function ($model, $attribute) {
+                return $model->getAttribute($attribute) !== $model->getOldAttribute($attribute);
+            }],
             [['status', 'created_by', 'updated_by', 'visibility'], 'integer'],
             [['tags'], 'string'],
             [['guid'], 'string', 'max' => 45],
-            [['time_zone'], 'in', 'range' => \DateTimeZone::listIdentifiers()],
+            [['time_zone'], 'validateTimeZone'],
             [['auth_mode'], 'string', 'max' => 10],
             [['language'], 'string', 'max' => 5],
             [['email'], 'unique'],
@@ -156,6 +167,19 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
             }],
             [['guid'], 'unique'],
         ];
+    }
+
+    /**
+     * Validate attribute time zone
+     * Force time zone to NULL if browser's time zone cannot be found on server side
+     *
+     * @param string $attribute
+     */
+    public function validateTimeZone($attribute, $params)
+    {
+        if (!in_array($this->$attribute, \DateTimeZone::listIdentifiers())) {
+            $this->$attribute = null;
+        }
     }
 
     /**
@@ -205,8 +229,8 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
         $scenarios = parent::scenarios();
         $scenarios['login'] = ['username', 'password'];
         $scenarios['editAdmin'] = ['username', 'email', 'status'];
-        $scenarios['registration_email'] = ['username', 'email'];
-        $scenarios['registration'] = ['username'];
+        $scenarios['registration_email'] = ['username', 'email', 'time_zone'];
+        $scenarios['registration'] = ['username', 'time_zone'];
 
         return $scenarios;
     }
@@ -367,8 +391,8 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
     /**
      * Specifies whether the user should appear in user lists or in the search.
      *
-     * @since 1.2.3
      * @return boolean is visible
+     * @since 1.2.3
      */
     public function isVisible()
     {
@@ -398,8 +422,8 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
 
     /**
      *
-     * @since 1.3
      * @throws Exception
+     * @since 1.3
      */
     public function softDelete()
     {
@@ -619,22 +643,6 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
     }
 
     /**
-     * Checks if the given $user instance shares the same identity with this
-     * user instance.
-     *
-     * @param \humhub\modules\user\models\User $user
-     * @return boolean
-     */
-    public function is(User $user = null)
-    {
-        if (!$user) {
-            return false;
-        }
-
-        return $user->id === $this->id;
-    }
-
-    /**
      * @inheritdoc
      */
     public function canAccessPrivateContent(User $user = null)
@@ -657,6 +665,17 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
         }
 
         return false;
+    }
+
+    /**
+     * Checks if the user is allowed to view all content
+     *
+     * @since 1.8
+     * @return bool
+     */
+    public function canViewAllContent()
+    {
+        return Yii::$app->getModule('content')->adminCanViewAllContent && $this->isSystemAdmin();
     }
 
     /**
@@ -755,7 +774,7 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
             return true;
         }
 
-        if((new PermissionManager(['subject' => $this]))->can([ManageUsers::class, ManageGroups::class])) {
+        if ((new PermissionManager(['subject' => $this]))->can([ManageUsers::class, ManageGroups::class])) {
             return true;
         }
 
@@ -768,6 +787,30 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
     public function getAuths()
     {
         return $this->hasMany(Auth::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Return user groups
+     *
+     * @return array user groups
+     */
+    public static function getUserGroups()
+    {
+        $groups = [];
+
+        if (Yii::$app->getModule('friendship')->getIsEnabled()) {
+            $groups[self::USERGROUP_FRIEND] = Yii::t('UserModule.account', 'Your friends');
+            $groups[self::USERGROUP_USER] = Yii::t('UserModule.account', 'Other users');
+        } else {
+            $groups[self::USERGROUP_USER] = Yii::t('UserModule.account', 'Users');
+        }
+
+        // Add guest groups if enabled
+        if (AuthHelper::isGuestAccessEnabled()) {
+            $groups[self::USERGROUP_GUEST] = Yii::t('UserModule.account', 'Not registered users');
+        }
+
+        return $groups;
     }
 
     /**
@@ -797,6 +840,43 @@ class User extends ContentContainerActiveRecord implements IdentityInterface, Se
     {
         // TODO: Implement same logic as for Spaces
         return Content::VISIBILITY_PUBLIC;
+    }
+
+    /**
+     * @param string Module id
+     * @return ContentContainerSettingsManager
+     */
+    public function getSettings($moduleId = 'user')
+    {
+        /* @var $module Module */
+        $module = Yii::$app->getModule($moduleId);
+        return $module->settings->contentContainer($this);
+    }
+
+    /**
+     * Check if the User must change password
+     *
+     * @since 1.8
+     * @return bool
+     */
+    public function mustChangePassword()
+    {
+        return (bool)$this->getSettings()->get('mustChangePassword');
+    }
+
+    /**
+     * Set/Unset User to force change password
+     *
+     * @since 1.8
+     * @param bool true - force user to change password, false - don't require to change password
+     */
+    public function setMustChangePassword($state = true)
+    {
+        if ($state) {
+            $this->getSettings()->set('mustChangePassword', true);
+        } else {
+            $this->getSettings()->delete('mustChangePassword');
+        }
     }
 
 }

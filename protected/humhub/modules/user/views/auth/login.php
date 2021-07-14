@@ -14,6 +14,7 @@ $this->pageTitle = Yii::t('UserModule.auth', 'Login');
 /* @var $canRegister boolean */
 /* @var $model Login */
 /* @var $invite Invite */
+/* @var $info string */
 ?>
 
 <div class="container" style="text-align: center;">
@@ -86,7 +87,7 @@ $this->pageTitle = Yii::t('UserModule.auth', 'Login');
                         <div><?= Yii::t('UserModule.auth', 'Please enter the letters from the image.'); ?></div>
 
                         <?= $form->field($invite, 'captcha')->widget(Captcha::class, [
-                            'captchaAction' => 'auth/captcha',
+                            'captchaAction' => '/user/auth/captcha',
                         ])->label(false); ?>
                     </div>
                 <?php endif; ?>

@@ -189,7 +189,7 @@ humhub.module('ui.modal', function (module, require, $) {
 
     Modal.prototype.load = function (url, cfg, originalEvent) {
         var that = this;
-        var cfg = cfg || {};
+        cfg = setDefaultRequestData(cfg);
 
         return new Promise(function (resolve, reject) {
             if (!that.isVisible()) {
@@ -198,13 +198,14 @@ humhub.module('ui.modal', function (module, require, $) {
             client.get(url, cfg, originalEvent).then(function (response) {
                 that.setDialog(response);
                 resolve(response);
+                that.focus();
             }).catch(reject);
         });
     };
 
     Modal.prototype.post = function (url, cfg, originalEvent) {
         var that = this;
-        var cfg = cfg || {};
+        cfg = setDefaultRequestData(cfg);
 
         return new Promise(function (resolve, reject) {
             if (!that.isVisible()) {
@@ -215,6 +216,13 @@ humhub.module('ui.modal', function (module, require, $) {
                 resolve(response);
             }).catch(reject);
         });
+    };
+
+    var setDefaultRequestData = function(cfg) {
+        cfg = cfg || {};
+        cfg.data = cfg.data || {};
+        cfg.viewContext = cfg.viewContext || 'modal';
+        return cfg;
     };
 
     /**
@@ -448,8 +456,17 @@ humhub.module('ui.modal', function (module, require, $) {
         return this;
     };
 
-    Modal.prototype.focus = function (content) {
-        this.$.find('select:visible, input[type="text"]:visible, textarea:visible, [contenteditable="true"]:visible').first().focus();
+    Modal.prototype.focus = function () {
+        var that = this;
+        setTimeout(function() {
+            var $input = that.$.find('select:visible, input[type="text"]:visible, textarea:visible, [contenteditable="true"]:visible').first();
+
+            if($input.data('select2')) {
+                $input.select2('focus');
+            } else {
+                $input.focus();
+            }
+        }, 100);
     };
 
     Modal.prototype.updateDialogOptions = function() {
@@ -643,7 +660,7 @@ humhub.module('ui.modal', function (module, require, $) {
         }
 
         var modal = (id) ? module.get(id) : module.global;
-        return client.submit(evt, _defaultRequestOptions(evt, options)).then(function (response) {
+        return client.submit(evt, setDefaultRequestData(options)).then(function (response) {
             if(response.success) {
                 modal.close();
             } else {
@@ -672,12 +689,21 @@ humhub.module('ui.modal', function (module, require, $) {
         }
 
         var modal = (id) ? module.get(id) : module.global;
-        return modal.load(evt, _defaultRequestOptions(evt, options))
+        return modal.load(evt, setDefaultRequestData(options))
             .catch(function (err) {
             module.log.error(err, true);
             modal.close();
         });
     };
+
+    var unload = function() {
+        $('.modal').each(function () {
+            var modal = Modal.instance(this);
+            if (modal && typeof modal.close === 'function') {
+                modal.close();
+            }
+        });
+    }
 
     var post = function (evt, options) {
         var id = evt.$trigger.data('modal-id');
@@ -690,7 +716,7 @@ humhub.module('ui.modal', function (module, require, $) {
         }
 
         var modal = (id) ? module.get(id) : module.global;
-        return modal.post(evt, _defaultRequestOptions(evt, options)).catch(function (err) {
+        return modal.post(evt, setDefaultRequestData(options)).catch(function (err) {
             module.log.error(err, true);
             modal.close();
         });
@@ -701,11 +727,6 @@ humhub.module('ui.modal', function (module, require, $) {
         if(modal) {
             modal.show();
         }
-    }
-
-    var _defaultRequestOptions = function (evt, options) {
-        options = options || {};
-        return options;
     };
 
     var get = function (id, options) {
@@ -744,6 +765,7 @@ humhub.module('ui.modal', function (module, require, $) {
         get: get,
         post: post,
         load: load,
+        unload: unload,
         show: show,
         submit: submit
     });

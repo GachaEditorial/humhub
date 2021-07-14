@@ -10,14 +10,21 @@ humhub.module('comment', function (module, require, $) {
 
     Form.prototype.submit = function (evt) {
         var that = this;
-        client.submit(evt, {dataType: 'html'}).then(function (response) {
-            var richText = that.getRichtext();
-            that.addComment(response.html);
-            that.getInput().val('').trigger('autosize.resize');
-            richText.$.trigger('clear');
-            that.getUpload().reset();
-        }).catch(function (err) {
-            module.log.error(err, true);
+        client.submit(evt, {dataType: 'html'}).status({
+            200: function (response) {
+                var richText = that.getRichtext();
+                that.addComment(response.html);
+                that.getInput().val('').trigger('autosize.resize');
+                richText.$.trigger('clear');
+                that.getUpload().reset();
+                that.$.find('.form-group').removeClass('has-error');
+                that.$.find('.help-block-error').html('');
+            },
+            400: function (response) {
+                that.replace(response.html);
+            }
+        }).catch(function (e) {
+            module.log.error(e, true);
         });
     };
 
@@ -52,27 +59,27 @@ humhub.module('comment', function (module, require, $) {
         try {
             // First check if this is a sub comment form
             var $root = this.$.closest('[data-action-component="comment.Comment"]');
-            if(!$root.length) {
+            if (!$root.length) {
                 $root = this.$.closest('.stream-entry-addons');
             }
 
-            if(!$root.length) {
+            if (!$root.length) {
                 return;
             }
 
             var $controls = $root.find('.wall-entry-controls:first');
-            if(!$controls.length) {
+            if (!$controls.length) {
                 return;
             }
 
             var $commentCount = $controls.find('.comment-count');
-            if($commentCount.length) {
+            if ($commentCount.length) {
                 var currentCount = $commentCount.data('count');
                 currentCount += count;
-                $commentCount.text(' ('+currentCount+')').show();
+                $commentCount.text(' (' + currentCount + ')').show();
                 $commentCount.data('count', currentCount);
             }
-        } catch(e) {
+        } catch (e) {
             module.log.error(e, false);
         }
     };
@@ -121,7 +128,7 @@ humhub.module('comment', function (module, require, $) {
         this.super('delete', {modal: module.config.modal.delteConfirm}).then(function ($confirm) {
             if ($confirm) {
                 module.log.success('success.delete');
-                if(hideHr) {
+                if (hideHr) {
                     $form.find('hr').hide();
                 }
             }
@@ -142,7 +149,6 @@ humhub.module('comment', function (module, require, $) {
                 that.highlight();
                 that.$.find('.comment-cancel-edit-link:first').hide();
                 that.$.find('.comment-edit-link:first').show();
-                module.log.success('success.saved');
             },
             400: function (response) {
                 that.setEditContent(response.html);
@@ -245,35 +251,58 @@ humhub.module('comment', function (module, require, $) {
         });
     };
 
-    var toggleComment = function(evt) {
-        var visible = evt.$target.is(':visible');
+    function toggleComment(target, isSlideToggle) {
+        var visible = target.is(':visible');
 
         // Comments are shown but form is not visible yet --> Toggle form only
-        if (visible && !evt.$target.children('.comment_create').is(':visible')) {
-            evt.$target.children('.comment_create').slideToggle(undefined, function() {
-                evt.$target.find('.humhub-ui-richtext').trigger('focus');
+        if (visible && !target.children('.comment_create').is(':visible')) {
+            target.children('.comment_create').slideToggle(undefined, function () {
+                target.find('.humhub-ui-richtext').trigger('focus');
             });
             return;
         }
 
-        var $form =  evt.$target.children('.comment_create');
+        var $form = target.children('.comment_create');
 
-        if(!evt.$target.find('.comment .media').length && !evt.$target.closest('[data-action-component="comment.Comment"]').length) {
+        if (!target.find('.comment .media').length && !target.closest('[data-action-component="comment.Comment"]').length) {
             $form.find('hr').hide();
         }
 
         $form.show();
 
-        evt.$target.slideToggle(undefined, function() {
-            evt.$target.find('.humhub-ui-richtext').trigger('focus');
-        });
+        if (isSlideToggle) {
+            target.slideToggle();
+        }
+
+        if(!visible) {
+            target.find('.humhub-ui-richtext').trigger('focus');
+        }
+    }
+
+    var toggleCommentHandler = function (evt) {
+        var target;
+
+        // Only one level of subcomments allowed. If Replay button is pressed under second level of comments then toggle parent first level.
+        if (evt.$target.parents('.nested-comments-root').length < 2) {
+            //toggle child comment
+            target = evt.$target;
+            toggleComment(target, true);
+        } else {
+            //toggle parent comment
+            target = evt.$target.closest('.comment').closest('.comment-container');
+            toggleComment(target, false);
+            var richtext = Widget.instance(target.find('.ProsemirrorEditor:last'));
+            var mentioning = require('ui.richtext.prosemirror').buildMentioning(evt.$target.closest('.media').find('.media-heading a'));
+            richtext.editor.init(mentioning);
+            richtext.$.trigger('focus');
+        }
     };
 
-    var scrollActive = function(evt) {
+    var scrollActive = function (evt) {
         evt.$trigger.closest('.comment-create-input-group').addClass('scrollActive');
     };
 
-    var scrollInactive = function(evt) {
+    var scrollInactive = function (evt) {
         evt.$trigger.closest('.comment-create-input-group').removeClass('scrollActive');
     };
 
@@ -285,6 +314,6 @@ humhub.module('comment', function (module, require, $) {
         scrollInactive: scrollInactive,
         showAll: showAll,
         showMore: showMore,
-        toggleComment: toggleComment
+        toggleComment: toggleCommentHandler
     });
 });

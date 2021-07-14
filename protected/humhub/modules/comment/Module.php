@@ -3,8 +3,9 @@
 namespace humhub\modules\comment;
 
 use humhub\modules\comment\models\Comment;
+use humhub\modules\comment\permissions\CreateComment;
+use humhub\modules\comment\notifications\NewComment;
 use humhub\modules\content\components\ContentActiveRecord;
-use humhub\modules\space\models\Space;
 use Yii;
 
 /**
@@ -33,7 +34,7 @@ class Module extends \humhub\components\Module
      */
     public function getPermissions($contentContainer = null)
     {
-        if ($contentContainer instanceof Space) {
+        if ($contentContainer) {
             return [
                 new permissions\CreateComment()
             ];
@@ -56,28 +57,33 @@ class Module extends \humhub\components\Module
     public function getNotifications()
     {
         return [
-            'humhub\modules\comment\notifications\NewComment'
+            NewComment::class
         ];
     }
 
     /**
-     * Checks if given content object can be commented
+     * Checks if given content object can be commented by current user
      *
      * @param Comment|ContentActiveRecord $object
      * @return boolean can comment
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
      */
     public function canComment($object)
     {
+        if (Yii::$app->user->isGuest) {
+            return false;
+        }
+
         // Only allow one level of subcomments
-        if ($object instanceof Comment && $object->object_model === Comment::class) {
+        if (Comment::isSubComment($object)) {
             return false;
         }
 
         $content = $object->content;
 
-        if ($content->container instanceof Space) {
-            $space = $content->container;
-            if (!$space->permissionManager->can(new permissions\CreateComment())) {
+        if($content->container) {
+            if (!$content->container->permissionManager->can(CreateComment::class)) {
                 return false;
             }
         }
@@ -88,5 +94,4 @@ class Module extends \humhub\components\Module
 
         return true;
     }
-
 }

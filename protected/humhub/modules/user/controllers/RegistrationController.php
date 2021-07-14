@@ -46,7 +46,7 @@ class RegistrationController extends Controller
     public function beforeAction($action)
     {
         if (!Yii::$app->user->isGuest) {
-            throw new HttpException(401, 'Your are already logged in! - Logout first!');
+            throw new HttpException(401, Yii::t('UserModule.base', 'Your are already logged in! - Logout first!'));
         }
 
         return parent::beforeAction($action);
@@ -84,7 +84,7 @@ class RegistrationController extends Controller
             // Autologin when user is enabled (no approval required)
             if ($registration->getUser()->status === User::STATUS_ENABLED) {
                 Yii::$app->user->switchIdentity($registration->models['User']);
-                $registration->models['User']->updateAttributes(['last_login' => new \yii\db\Expression('NOW()')]);
+                $registration->models['User']->updateAttributes(['last_login' => date('Y-m-d G:i:s')]);
                 if (Yii::$app->request->getIsAjax()) {
                     return $this->htmlRedirect(Yii::$app->user->returnUrl);
                 }
@@ -92,8 +92,8 @@ class RegistrationController extends Controller
             }
 
             return $this->render('success', [
-                        'form' => $registration,
-                        'needApproval' => ($registration->getUser()->status === User::STATUS_NEED_APPROVAL)
+                'form' => $registration,
+                'needApproval' => ($registration->getUser()->status === User::STATUS_NEED_APPROVAL)
             ]);
         }
 

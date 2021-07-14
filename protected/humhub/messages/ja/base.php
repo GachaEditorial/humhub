@@ -26,6 +26,7 @@ return array (
   'Copy to clipboard' => 'クリップボードにコピー',
   'Could not find content of addon!' => 'アドオンのコンテンツを見つけることができませんでした！',
   'Could not find requested page.' => '要求されたページが見つかりませんでした。',
+  'Database connection time: {dbTime} - Configured time zone: {time}' => 'データベース接続時間：{dbTime}-構成されたタイムゾーン：{time}',
   'Default' => 'デフォルト',
   'Delete' => '削除',
   'Deny' => '拒否',
@@ -81,4 +82,7 @@ return array (
   'Upload' => 'アップロード',
   'Upload file' => 'ファイルをアップロード',
   'You are not allowed to run this action.' => 'この操作を実行することはできません。',
+  '{nFormatted}B' => '{nFormatted}B',
+  '{nFormatted}K' => '{nFormatted}K',
+  '{nFormatted}M' => '{nFormatted}M',
 );

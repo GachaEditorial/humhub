@@ -46,6 +46,7 @@ return [
     'Copy to clipboard' => '',
     'Could not find content of addon!' => '',
     'Could not find requested page.' => '',
+    'Database connection time: {dbTime} - Configured time zone: {time}' => '',
     'Deny' => '',
     'Do you really want to perform this action?' => '',
     'Error' => '',
@@ -98,4 +99,7 @@ return [
     'Upload' => '',
     'Upload file' => '',
     'You are not allowed to run this action.' => '',
+    '{nFormatted}B' => '',
+    '{nFormatted}K' => '',
+    '{nFormatted}M' => '',
 ];

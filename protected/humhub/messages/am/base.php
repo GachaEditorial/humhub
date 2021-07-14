@@ -96,6 +96,10 @@ return [
     'You are not allowed to run this action.' => 'ይህን ተግባር ለማከናወን አልተፈቀደልዎትም።',
     'Actions' => '',
     'All' => '',
+    'Database connection time: {dbTime} - Configured time zone: {time}' => '',
     'Powered by {name}' => '',
     'There are unsaved changes, do you really want to leave this page?' => '',
+    '{nFormatted}B' => '',
+    '{nFormatted}K' => '',
+    '{nFormatted}M' => '',
 ];

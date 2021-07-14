@@ -56,8 +56,7 @@ class DirectoryController extends Controller
     {
         return [
             'stream' => [
-                'class' => UserPostsStreamAction::class,
-                'mode' => UserPostsStreamAction::MODE_NORMAL,
+                'class' => UserPostsStreamAction::class
             ],
         ];
     }
@@ -94,8 +93,11 @@ class DirectoryController extends Controller
             $query->isGroupMember($group);
         }
 
+        /** @var Module $module */
+        $module = Yii::$app->getModule('directory');
+
         $countQuery = clone $query;
-        $pagination = new Pagination(['totalCount' => $countQuery->count()]);
+        $pagination = new Pagination(['totalCount' => $countQuery->count(), 'pageSize' => $module->pageSize]);
 
         // Order
         $query->joinWith('profile');
@@ -134,8 +136,11 @@ class DirectoryController extends Controller
         $query = Space::find()->visible()->search($keyword);
         $query->addOrderBy('space.name');
 
+        /** @var Module $module */
+        $module = Yii::$app->getModule('directory');
+
         $countQuery = clone $query;
-        $pagination = new Pagination(['totalCount' => $countQuery->count()]);
+        $pagination = new Pagination(['totalCount' => $countQuery->count(), 'pageSize' => $module->pageSize]);
 
         Event::on(Sidebar::class, Sidebar::EVENT_INIT, function ($event) {
             $event->sender->addWidget(NewSpaces::class, [], ['sortOrder' => 10]);

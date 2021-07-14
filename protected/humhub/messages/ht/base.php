@@ -63,6 +63,7 @@ return [
     'Confirm' => '',
     'Copy to clipboard' => '',
     'Could not find requested page.' => '',
+    'Database connection time: {dbTime} - Configured time zone: {time}' => '',
     'Delete' => '',
     'Do you really want to perform this action?' => '',
     'Edit' => '',
@@ -98,4 +99,7 @@ return [
     'Upload' => '',
     'Upload file' => '',
     'You are not allowed to run this action.' => '',
+    '{nFormatted}B' => '',
+    '{nFormatted}K' => '',
+    '{nFormatted}M' => '',
 ];

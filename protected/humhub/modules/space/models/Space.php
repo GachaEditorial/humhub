@@ -30,12 +30,14 @@ use humhub\modules\content\components\ContentContainerActiveRecord;
 use humhub\modules\content\models\Content;
 use humhub\modules\user\components\ActiveQueryUser;
 use humhub\modules\user\helpers\AuthHelper;
+use humhub\modules\user\models\GroupSpace;
 use humhub\modules\user\models\User;
 use humhub\modules\user\models\Follow;
 use humhub\modules\user\models\Invite;
 use humhub\modules\user\models\Group;
 use humhub\modules\space\widgets\Wall;
 use humhub\modules\space\widgets\Members;
+use humhub\modules\user\models\User as UserModel;
 use Yii;
 
 /**
@@ -45,6 +47,7 @@ use Yii;
  * @property string $guid
  * @property string $name
  * @property string $description
+ * @property string $about
  * @property string $url
  * @property integer $join_policy
  * @property integer $visibility
@@ -119,7 +122,8 @@ class Space extends ContentContainerActiveRecord implements Searchable
         $rules = [
             [['join_policy', 'visibility', 'status', 'auto_add_new_members', 'default_content_visibility'], 'integer'],
             [['name'], 'required'],
-            [['description', 'tags', 'color'], 'string'],
+            [['description', 'about', 'tags', 'color'], 'string'],
+            [['description'], 'string', 'max' => 100],
             [['join_policy'], 'in', 'range' => [0, 1, 2]],
             [['visibility'], 'in', 'range' => [0, 1, 2]],
             [['visibility'], 'checkVisibility'],
@@ -130,7 +134,7 @@ class Space extends ContentContainerActiveRecord implements Searchable
         ];
 
         if (Yii::$app->getModule('space')->useUniqueSpaceNames) {
-            $rules[] = [['name'], 'unique', 'targetClass' => static::class, 'when' => function($model) {
+            $rules[] = [['name'], 'unique', 'targetClass' => static::class, 'when' => function ($model) {
                 return $model->isAttributeChanged('name');
             }];
         }
@@ -145,7 +149,7 @@ class Space extends ContentContainerActiveRecord implements Searchable
     {
         $scenarios = parent::scenarios();
 
-        $scenarios[static::SCENARIO_EDIT] = ['name', 'color', 'description', 'tags', 'join_policy', 'visibility', 'default_content_visibility', 'url'];
+        $scenarios[static::SCENARIO_EDIT] = ['name', 'color', 'description', 'about', 'tags', 'join_policy', 'visibility', 'default_content_visibility', 'url'];
         $scenarios[static::SCENARIO_CREATE] = ['name', 'color', 'description', 'join_policy', 'visibility'];
         $scenarios[static::SCENARIO_SECURITY_SETTINGS] = ['default_content_visibility', 'join_policy', 'visibility'];
 
@@ -162,6 +166,7 @@ class Space extends ContentContainerActiveRecord implements Searchable
             'name' => Yii::t('SpaceModule.base', 'Name'),
             'color' => Yii::t('SpaceModule.base', 'Color'),
             'description' => Yii::t('SpaceModule.base', 'Description'),
+            'about' => Yii::t('SpaceModule.base', 'About'),
             'join_policy' => Yii::t('SpaceModule.base', 'Join Policy'),
             'visibility' => Yii::t('SpaceModule.base', 'Visibility'),
             'status' => Yii::t('SpaceModule.base', 'Status'),
@@ -175,12 +180,41 @@ class Space extends ContentContainerActiveRecord implements Searchable
         ];
     }
 
+
     public function attributeHints()
     {
         return [
             'visibility' => Yii::t('SpaceModule.manage', 'Choose the security level for this workspace to define the visibleness.'),
             'join_policy' => Yii::t('SpaceModule.manage', 'Choose the kind of membership you want to provide for this workspace.'),
-            'default_content_visibility' => Yii::t('SpaceModule.manage', 'Choose if new content should be public or private by default')
+            'default_content_visibility' => Yii::t('SpaceModule.manage', 'Choose if new content should be public or private by default'),
+            'description' => Yii::t('SpaceModule.base', 'Max. 100 characters.'),
+            'about' => Yii::t('SpaceModule.base', 'Shown on About Page.'),
+        ];
+    }
+
+    /**
+     * @return array
+     * @since 1.7
+     */
+    public static function visibilityOptions()
+    {
+        return [
+            self::VISIBILITY_NONE => Yii::t('SpaceModule.base', 'Private (Invisible)'),
+            self::VISIBILITY_REGISTERED_ONLY => Yii::t('SpaceModule.base', 'Public (Registered users only)'),
+            self::VISIBILITY_ALL => Yii::t('SpaceModule.base', 'Visible for all (members and guests)'),
+        ];
+    }
+
+    /**
+     * @return array
+     * @since 1.7
+     */
+    public static function joinPolicyOptions()
+    {
+        return [
+            self::JOIN_POLICY_NONE => Yii::t('SpaceModule.base', 'Only by invite'),
+            self::JOIN_POLICY_APPLICATION => Yii::t('SpaceModule.base', 'Invite and request'),
+            self::JOIN_POLICY_FREE => Yii::t('SpaceModule.base', 'Everyone can enter'),
         ];
     }
 
@@ -289,12 +323,7 @@ class Space extends ContentContainerActiveRecord implements Searchable
         }
 
         Invite::deleteAll(['space_invite_id' => $this->id]);
-
-        // When this workspace is used in a group as default workspace, delete the link
-        foreach (Group::findAll(['space_id' => $this->id]) as $group) {
-            $group->space_id = '';
-            $group->save();
-        }
+        GroupSpace::deleteAll(['space_id' => $this->id]);
 
         return parent::beforeDelete();
     }
@@ -489,7 +518,7 @@ class Space extends ContentContainerActiveRecord implements Searchable
     {
         $user = !$user && !Yii::$app->user->isGuest ? Yii::$app->user->getIdentity() : $user;
 
-        if(!$user) {
+        if (!$user) {
             return false;
         }
 
@@ -571,7 +600,7 @@ class Space extends ContentContainerActiveRecord implements Searchable
      *
      * @return array user groups
      */
-    public function getUserGroups()
+    public static function getUserGroups()
     {
         $groups = [
             self::USERGROUP_OWNER => Yii::t('SpaceModule.base', 'Owner'),
@@ -583,7 +612,7 @@ class Space extends ContentContainerActiveRecord implements Searchable
 
         // Add guest groups if enabled
         if (AuthHelper::isGuestAccessEnabled()) {
-            $groups[self::USERGROUP_GUEST] = 'Guests';
+            $groups[self::USERGROUP_GUEST] = Yii::t('SpaceModule.base', 'Guests');
         }
 
         return $groups;
@@ -633,4 +662,38 @@ class Space extends ContentContainerActiveRecord implements Searchable
         return Content::VISIBILITY_PRIVATE;
     }
 
+    /**
+     * Returns space privileged groups and their members` User model in array
+     *
+     * @return array
+     * @since 1.7
+     */
+    public function getPrivilegedGroupUsers()
+    {
+        $owner = $this->getOwnerUser()->one();
+        $groups[self::USERGROUP_OWNER][] = $owner;
+
+        $query = Membership::find()->joinWith('user');
+        $query->andWhere(['IN', 'group_id', [self::USERGROUP_ADMIN, self::USERGROUP_MODERATOR]]);
+        $query->andWhere(['space_id' => $this->id]);
+        $query->andWhere(['!=', 'user_id', $owner->id]);
+        $query->andWhere(['user.status' => UserModel::STATUS_ENABLED]);
+
+        foreach ($query->all() as $membership) {
+            $groups[$membership->group_id][] = $membership->user;
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Gets query for [[GroupSpace]].
+     *
+     * @return \yii\db\ActiveQuery
+     * @since 1.8
+     */
+    public function getGroupSpaces()
+    {
+         return $this->hasMany(GroupSpace::class, ['space_id' => 'id']);
+    }
 }

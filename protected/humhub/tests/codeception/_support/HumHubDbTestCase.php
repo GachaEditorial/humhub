@@ -2,13 +2,15 @@
 
 namespace tests\codeception\_support;
 
-use humhub\components\bootstrap\ModuleAutoLoader;
-use humhub\components\Module;
+use humhub\models\UrlOembed;
+use humhub\modules\content\widgets\richtext\converter\RichTextToHtmlConverter;
+use humhub\modules\content\widgets\richtext\converter\RichTextToMarkdownConverter;
+use humhub\modules\content\widgets\richtext\converter\RichTextToPlainTextConverter;
+use humhub\modules\content\widgets\richtext\converter\RichTextToShortTextConverter;
+use humhub\modules\live\tests\codeception\fixtures\LiveFixture;
 use humhub\modules\user\tests\codeception\fixtures\UserFullFixture;
-use humhub\tests\codeception\fixtures\ModulesEnabledFixture;
 use humhub\tests\codeception\fixtures\UrlOembedFixture;
 use Yii;
-use yii\base\Event;
 use yii\db\ActiveRecord;
 use Codeception\Test\Unit;
 use humhub\libs\BasePermission;
@@ -49,6 +51,7 @@ class HumHubDbTestCase extends Unit
         Yii::setAlias('@webroot', realpath($webRoot));
         $this->initModules();
         $this->reloadSettings();
+        $this->flushCache();
         $this->deleteMails();
     }
 
@@ -61,6 +64,15 @@ class HumHubDbTestCase extends Unit
                 $module->settings->reload();
             }
         }
+    }
+
+    protected function flushCache()
+    {
+        RichTextToShortTextConverter::flushCache();
+        RichTextToHtmlConverter::flushCache();
+        RichTextToPlainTextConverter::flushCache();
+        RichTextToMarkdownConverter::flushCache();
+        UrlOembed::flush();
     }
 
     protected function deleteMails()
@@ -128,6 +140,7 @@ class HumHubDbTestCase extends Unit
             'file' => ['class' => \humhub\modules\file\tests\codeception\fixtures\FileFixture::class],
             'activity' => ['class' => \humhub\modules\activity\tests\codeception\fixtures\ActivityFixture::class],
             'friendship' => ['class' => \humhub\modules\friendship\tests\codeception\fixtures\FriendshipFixture::class],
+            'live' => [ 'class' => LiveFixture::class]
         ];
     }
 
@@ -206,7 +219,7 @@ class HumHubDbTestCase extends Unit
      * @see assertSentEmail
      * @since 1.3
      */
-    public function assertMailSent($count = 0, $msg = null)
+    public function assertMailSent($count = 0)
     {
         return $this->getYiiModule()->seeEmailIsSent($count);
     }
@@ -219,6 +232,25 @@ class HumHubDbTestCase extends Unit
     public function assertSentEmail($count = 0)
     {
         return $this->getYiiModule()->seeEmailIsSent($count);
+    }
+
+    public function assertEqualsLastEmailTo($to, $strict = true)
+    {
+        if(is_string($to)) {
+            $to = [$to];
+        }
+
+        $message = $this->getYiiModule()->grabLastSentEmail();
+        $expected = $message->getTo();
+
+        foreach ($to as $email) {
+            $this->assertArrayHasKey($email, $expected);
+        }
+
+        if($strict) {
+            $this->assertEquals(count($to), count($expected));
+        }
+
     }
 
     public function assertEqualsLastEmailSubject($subject)

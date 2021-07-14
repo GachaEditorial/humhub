@@ -1,4 +1,5 @@
 <?php
 return array (
-  'User not found!' => 'Usuário não encontrado!',
+  'Invalid user state: {state}' => 'Estado de utilizador inválido: {state}',
+  'User not found!' => 'Utilizador não encontrado!',
 );

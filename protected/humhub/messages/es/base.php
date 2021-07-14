@@ -26,6 +26,7 @@ return array (
   'Copy to clipboard' => 'Copiar al portapapeles',
   'Could not find content of addon!' => '¡No se pudo encontrar el contenido del complemento!',
   'Could not find requested page.' => 'No se ha encontrado la página solicitada',
+  'Database connection time: {dbTime} - Configured time zone: {time}' => 'Hora de conexión a la base de datos: {dbTime} - Zona horaria configurada: {time}',
   'Default' => 'Por Defecto',
   'Delete' => 'Borrar',
   'Deny' => 'Denegar',
@@ -81,4 +82,7 @@ return array (
   'Upload' => 'Subir',
   'Upload file' => 'Cargar archivo',
   'You are not allowed to run this action.' => 'No estás autorizado para realizar esta acción.',
+  '{nFormatted}B' => '{nFormatted}B',
+  '{nFormatted}K' => '{nFormatted}K',
+  '{nFormatted}M' => '{nFormatted}M',
 );

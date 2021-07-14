@@ -1,5 +1,6 @@
 <?php
 
+use humhub\widgets\Button;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use humhub\compat\CActiveForm;
@@ -9,7 +10,7 @@ use humhub\compat\CHtml;
 <?php $this->beginContent('@admin/views/setting/_advancedLayout.php') ?>
 
 <div class="clearfix">
-    <?= Html::a('<i class="fa fa-arrow-left" aria-hidden="true"></i>&nbsp;&nbsp;' . Yii::t('AdminModule.settings', 'Back to overview'), Url::to(['setting/oembed']), ['class' => 'btn btn-default pull-right']); ?>
+    <?= Button::back(Url::to(['setting/oembed']),  Yii::t('AdminModule.settings', 'Back to overview')) ?>
     <h4 class="pull-left">
         <?php
         if ($prefix == "") {
@@ -40,12 +41,11 @@ use humhub\compat\CHtml;
     <p class="help-block"><?= Yii::t('AdminModule.settings', 'Use %url% as placeholder for URL. Format needs to be JSON. (e.g. http://www.youtube.com/oembed?url=%url%&format=json)'); ?></p>
 </div>
 
-
-<?= CHtml::submitButton(Yii::t('AdminModule.settings', 'Save'), ['class' => 'btn btn-primary', 'data-ui-loader' => ""]); ?>
-<?php CActiveForm::end(); ?>
-
 <?php if ($prefix != ""): ?>
     <?= Html::a(Yii::t('AdminModule.settings', 'Delete'), Url::to(['oembed-delete', 'prefix' => $prefix]), ['class' => 'btn btn-danger pull-right', 'data-method' => 'POST']); ?>
 <?php endif; ?>
+
+<?= CHtml::submitButton(Yii::t('AdminModule.settings', 'Save'), ['class' => 'btn btn-primary', 'data-ui-loader' => ""]); ?>
+<?php CActiveForm::end(); ?>
 
 <?php $this->endContent(); ?>

@@ -1,6 +1,6 @@
 <?php
 /**
- * @var $this \humhub\components\View
+ * @var $this \humhub\modules\ui\view\components\View
  * @var \humhub\modules\admin\models\forms\FileSettingsForm $model
  * @var float $maxUploadSize
  * @var string $maxUploadSizeText
@@ -39,22 +39,10 @@ $fileModule = Yii::$app->getModule('file');
 </div>
 
 <div class="form-group">
-    <?= $form->labelEx($model, 'maxPreviewImageWidth'); ?>
-    <?= $form->textField($model, 'maxPreviewImageWidth', ['class' => 'form-control', 'readonly' => $fileModule->settings->isFixed('maxPreviewImageWidth')]); ?>
-    <p class="help-block"><?= Yii::t('AdminModule.settings', 'If not set, width will default to 200px.') ?></p>
-</div>
-
-<div class="form-group">
-    <?= $form->labelEx($model, 'maxPreviewImageHeight'); ?>
-    <?= $form->textField($model, 'maxPreviewImageHeight', ['class' => 'form-control', 'readonly' => $fileModule->settings->isFixed('maxPreviewImageHeight')]); ?>
-    <p class="help-block"><?= Yii::t('AdminModule.settings', 'If not set, height will default to 200px.') ?></p>
-</div>
-
-<div class="form-group">
     <div class="checkbox">
         <label>
-            <?= $form->checkBox($model, 'hideImageFileInfo', ['disabled' => $fileModule->settings->isFixed('hideImageFileInfo')]); ?>
-            <?= $model->getAttributeLabel('hideImageFileInfo'); ?>
+            <?= $form->checkBox($model, 'excludeMediaFilesPreview', ['disabled' => $fileModule->settings->isFixed('excludeMediaFilesPreview')]); ?>
+            <?= $model->getAttributeLabel('excludeMediaFilesPreview'); ?>
         </label>
     </div>
 </div>

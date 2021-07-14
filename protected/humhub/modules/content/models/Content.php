@@ -28,6 +28,7 @@ use humhub\modules\user\models\User;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidArgumentException;
+use yii\db\Expression;
 use yii\db\IntegrityException;
 use yii\helpers\Url;
 
@@ -56,7 +57,7 @@ use yii\helpers\Url;
  * @property integer $object_id
  * @property integer $visibility
  * @property integer $pinned
- * @property string $archived
+ * @property integer $archived
  * @property string $created_at
  * @property integer $created_by
  * @property string $updated_at
@@ -205,7 +206,7 @@ class Content extends ActiveRecord implements Movable, ContentOwner
             }
         }
 
-        $this->stream_sort_date = new \yii\db\Expression('NOW()');
+        $this->stream_sort_date = date('Y-m-d G:i:s');
 
         if ($this->created_by == "") {
             throw new Exception("Could not save content without created_by!");
@@ -238,7 +239,7 @@ class Content extends ActiveRecord implements Movable, ContentOwner
                 'originator' => $this->createdBy->guid,
                 'contentContainerId' => $this->container->contentContainerRecord->id,
                 'visibility' => $this->visibility,
-                'sourceClass' => $contentSource->className(),
+                'sourceClass' => get_class($contentSource),
                 'sourceId' => $contentSource->getPrimaryKey(),
                 'silent' => $this->isMuted(),
                 'streamChannel' => $this->stream_channel,
@@ -247,7 +248,7 @@ class Content extends ActiveRecord implements Movable, ContentOwner
             ]));
         }
 
-        return parent::afterSave($insert, $changedAttributes);
+        parent::afterSave($insert, $changedAttributes);
     }
 
     /**
@@ -370,6 +371,11 @@ class Content extends ActiveRecord implements Movable, ContentOwner
      */
     public function canPin()
     {
+        // Currently global content can not be pinned
+        if (!$this->getContainer()) {
+            return false;
+        }
+
         if ($this->isArchived()) {
             return false;
         }
@@ -408,6 +414,16 @@ class Content extends ActiveRecord implements Movable, ContentOwner
      */
     public function canArchive()
     {
+        // Currently global content can not be archived
+        if (!$this->getContainer()) {
+            return false;
+        }
+
+        // No need to archive content on an archived container, content is marked as archived already
+        if ($this->getContainer()->isArchived()) {
+            return false;
+        }
+
         return $this->getContainer()->permissionManager->can(new ManageContent());
     }
 
@@ -538,6 +554,7 @@ class Content extends ActiveRecord implements Movable, ContentOwner
         if (!$container) {
             $container = $this->container;
         }
+
         return $this->getModel()->isOwner() || Yii::$app->user->can(ManageUsers::class) || $container->can(ManageContent::class);
     }
 
@@ -570,9 +587,9 @@ class Content extends ActiveRecord implements Movable, ContentOwner
      * HActiveRecordContent (e.g. Post) to overwrite this behavior.
      * e.g. in case there is no wall entry available for this content.
      *
-     * @since 0.11.1
      * @param boolean $scheme
      * @return string the URL
+     * @since 0.11.1
      */
     public function getUrl($scheme = false)
     {
@@ -625,8 +642,8 @@ class Content extends ActiveRecord implements Movable, ContentOwner
      * Relation to ContentContainer model
      * Note: this is not a Space or User instance!
      *
-     * @since 1.1
      * @return \yii\db\ActiveQuery
+     * @since 1.1
      */
     public function getContentContainer()
     {
@@ -636,8 +653,8 @@ class Content extends ActiveRecord implements Movable, ContentOwner
     /**
      * Returns the ContentTagRelation query.
      *
-     * @since 1.2.2
      * @return \yii\db\ActiveQuery
+     * @since 1.2.2
      */
     public function getTagRelations()
     {
@@ -647,8 +664,8 @@ class Content extends ActiveRecord implements Movable, ContentOwner
     /**
      * Returns all content related tags ContentTags related to this content.
      *
-     * @since 1.2.2
      * @return \yii\db\ActiveQuery
+     * @since 1.2.2
      */
     public function getTags($tagClass = ContentTag::class)
     {
@@ -658,9 +675,9 @@ class Content extends ActiveRecord implements Movable, ContentOwner
     /**
      * Adds a new ContentTagRelation for this content and the given $tag instance.
      *
-     * @since 1.2.2
      * @param ContentTag $tag
      * @return bool if the provided tag is part of another ContentContainer
+     * @since 1.2.2
      */
     public function addTag(ContentTag $tag)
     {
@@ -681,8 +698,8 @@ class Content extends ActiveRecord implements Movable, ContentOwner
     /**
      * Adds the given ContentTag array to this content.
      *
-     * @since 1.3
      * @param $tags ContentTag[]
+     * @since 1.3
      */
     public function addTags($tags)
     {
@@ -768,11 +785,11 @@ class Content extends ActiveRecord implements Movable, ContentOwner
     /**
      * Checks if user can view this content.
      *
-     * @since 1.1
      * @param User|integer $user
      * @return boolean can view this content
      * @throws Exception
      * @throws \Throwable
+     * @since 1.1
      */
     public function canView($user = null)
     {
@@ -783,7 +800,7 @@ class Content extends ActiveRecord implements Movable, ContentOwner
         }
 
         // Check global content visibility, private global content is visible for all users
-        if(empty($this->contentcontainer_id) && !Yii::$app->user->isGuest) {
+        if (empty($this->contentcontainer_id) && !Yii::$app->user->isGuest) {
             return true;
         }
 
@@ -803,7 +820,7 @@ class Content extends ActiveRecord implements Movable, ContentOwner
         }
 
         // Check system admin can see all content module configuration
-        if ($user->isSystemAdmin() && Yii::$app->getModule('content')->adminCanViewAllContent) {
+        if ($user->canViewAllContent()) {
             return true;
         }
 
@@ -831,15 +848,15 @@ class Content extends ActiveRecord implements Movable, ContentOwner
         }
 
         // GLobal content
-        if(!$this->container) {
+        if (!$this->container) {
             return $this->isPublic();
         }
 
-        if($this->container instanceof Space) {
+        if ($this->container instanceof Space) {
             return $this->isPublic() && $this->container->visibility == Space::VISIBILITY_ALL;
         }
 
-        if($this->container instanceof User) {
+        if ($this->container instanceof User) {
             return $this->isPublic() && $this->container->visibility == User::VISIBILITY_ALL;
         }
 
@@ -851,7 +868,7 @@ class Content extends ActiveRecord implements Movable, ContentOwner
      */
     public function updateStreamSortTime()
     {
-        $this->updateAttributes(['stream_sort_date' => new \yii\db\Expression('NOW()')]);
+        $this->updateAttributes(['stream_sort_date' => date('Y-m-d G:i:s')]);
     }
 
     /**
@@ -876,5 +893,14 @@ class Content extends ActiveRecord implements Movable, ContentOwner
     public function getContentDescription()
     {
         return $this->getModel()->getContentDescription();
+    }
+
+    /**
+     * @returns boolean true if this content has been updated, otherwise false
+     * @since 1.7
+     */
+    public function isUpdated()
+    {
+        return $this->created_at !== $this->updated_at && !empty($this->updated_at) && is_string($this->updated_at);
     }
 }

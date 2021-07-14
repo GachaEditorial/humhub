@@ -1,13 +1,15 @@
 <?php
 
 use humhub\libs\Html;
+use humhub\modules\content\widgets\UpdatedIcon;
+use humhub\modules\ui\icon\widgets\Icon;
+use humhub\modules\comment\widgets\CommentEntryLinks;
 use humhub\widgets\TimeAgo;
 use humhub\modules\content\widgets\richtext\RichText;
 use humhub\modules\user\widgets\Image as UserImage;
 use humhub\modules\file\widgets\ShowFiles;
-use humhub\modules\like\widgets\LikeLink;
-use humhub\modules\comment\widgets\CommentLink;
 use humhub\modules\comment\widgets\Comments;
+use humhub\modules\comment\models\Comment;
 
 /* @var $this \humhub\modules\ui\view\components\View */
 /* @var $comment \humhub\modules\comment\models\Comment */
@@ -37,7 +39,7 @@ $module = Yii::$app->getModule('comment');
             <li class="dropdown ">
                 <a class="dropdown-toggle" data-toggle="dropdown" href="#"
                    aria-label="<?= Yii::t('base', 'Toggle comment menu'); ?>" aria-haspopup="true">
-                    <i class="fa fa-angle-down"></i>
+                    <?= Icon::get('dropdownToggle') ?>
                 </a>
 
                 <ul class="dropdown-menu pull-right">
@@ -45,11 +47,11 @@ $module = Yii::$app->getModule('comment');
                         <li>
                             <a href="#" class="comment-edit-link" data-action-click="edit"
                                data-action-url="<?= $editUrl ?>">
-                                <i class="fa fa-pencil"></i> <?= Yii::t('CommentModule.base', 'Edit') ?>
+                                <?= Icon::get('edit') ?> <?= Yii::t('CommentModule.base', 'Edit') ?>
                             </a>
                             <a href="#" class="comment-cancel-edit-link" data-action-click="cancelEdit"
                                data-action-url="<?= $loadUrl ?>" style="display:none;">
-                                <i class="fa fa-pencil"></i> <?= Yii::t('CommentModule.base', 'Cancel Edit') ?>
+                                <?= Icon::get('edit') ?> <?= Yii::t('CommentModule.base', 'Cancel Edit') ?>
                             </a>
                         </li>
                     <?php endif; ?>
@@ -57,7 +59,7 @@ $module = Yii::$app->getModule('comment');
                     <?php if ($canDelete): ?>
                         <li>
                             <a href="#" data-action-click="delete">
-                                <i class="fa fa-trash-o"></i> <?= Yii::t('CommentModule.base', 'Delete') ?>
+                                <?= Icon::get('delete') ?> <?= Yii::t('CommentModule.base', 'Delete') ?>
                             </a>
                         </li>
                     <?php endif; ?>
@@ -65,14 +67,14 @@ $module = Yii::$app->getModule('comment');
             </li>
         </ul>
     <?php endif; ?>
-    <?= UserImage::widget(['user' => $user, 'width' => 40, 'htmlOptions' => ['class' => 'pull-left', 'data-contentcontainer-id' => $user->contentcontainer_id]]); ?>
+    <?= UserImage::widget(['user' => $user, 'width' => 25, 'htmlOptions' => ['class' => 'pull-left', 'data-contentcontainer-id' => $user->contentcontainer_id]]); ?>
     <div>
         <div class="media-body">
-            <h4 class="media-heading"><?= Html::containerLink($user); ?>
-                <small><?= TimeAgo::widget(['timestamp' => $createdAt]); ?>
-                    <?php if ($updatedAt !== null): ?>
-                        &middot; <span class="tt"
-                                       title="<?= Yii::$app->formatter->asDateTime($updatedAt); ?>"><?= Yii::t('ContentModule.base', 'Updated'); ?></span>
+            <h4 class="media-heading">
+                <?= Html::containerLink($user) ?>
+                <small>&middot <?= TimeAgo::widget(['timestamp' => $createdAt]) ?>
+                    <?php if ($comment->isUpdated()): ?>
+                        &middot <?= UpdatedIcon::getByDated($comment->updated_at) ?>
                     <?php endif; ?>
                 </small>
             </h4>
@@ -87,13 +89,10 @@ $module = Yii::$app->getModule('comment');
         </div>
 
         <div class="wall-entry-controls">
-            <?php if ($module->canComment($comment)): ?>
-                <?= CommentLink::widget(['object' => $comment]); ?>&nbsp;&nbsp;&middot;&nbsp;
-            <?php endif; ?>
-            <?= LikeLink::widget(['object' => $comment]); ?>
+            <?= CommentEntryLinks::widget(['object' => $comment]); ?>
         </div>
 
-        <div class="nested-comments-root" style="margin-left:42px">
+        <div class="nested-comments-root">
             <?= Comments::widget(['object' => $comment]); ?>
         </div>
     </div>
